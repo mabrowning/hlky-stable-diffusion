@@ -154,8 +154,6 @@ def load_model_from_config(config, ckpt, verbose=False):
         print("unexpected keys:")
         print(u)
 
-    model.cuda()
-    model.eval()
     return model
 
 def load_sd_from_config(ckpt, verbose=False):
@@ -286,8 +284,12 @@ def create_random_tensors(shape, seeds):
     return x
 
 def torch_gc():
-    torch.cuda.empty_cache()
-    torch.cuda.ipc_collect()
+    try:
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
+    except:
+        pass
+
 def load_LDSR(checking=False):
     model_name = 'model'
     yaml_name = 'project'
@@ -393,6 +395,13 @@ def try_loading_LDSR(model_name: str,checking=False):
 try_loading_LDSR('model',checking=True)
 
 def load_SD_model():
+    if torch.cuda.is_available():
+        device = torch.device(f"cuda:{opt.gpu}")
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
+
     if opt.optimized:
         sd = load_sd_from_config(opt.ckpt)
         li, lo = [], []
@@ -413,11 +422,10 @@ def load_SD_model():
             sd['model2.' + key[6:]] = sd.pop(key)
 
         config = OmegaConf.load("optimizedSD/v1-inference.yaml")
-        device = torch.device(f"cuda:{opt.gpu}") if torch.cuda.is_available() else torch.device("cpu")
 
         model = instantiate_from_config(config.modelUNet)
         _, _ = model.load_state_dict(sd, strict=False)
-        model.cuda()
+        model.to(device)
         model.eval()
         model.turbo = opt.optimized_turbo
 
@@ -441,8 +449,9 @@ def load_SD_model():
         config = OmegaConf.load(opt.config)
         model = load_model_from_config(config, opt.ckpt)
 
-        device = torch.device(f"cuda:{opt.gpu}") if torch.cuda.is_available() else torch.device("cpu")
-        model = (model if opt.no_half else model.half()).to(device)
+        model = (model if opt.no_half else model.half())
+        model.to(device)
+        model.eval()
     return model, device,config
 
 if opt.optimized:
@@ -849,7 +858,7 @@ def process_images(
         output_images = []
     grid_captions = []
     stats = []
-    with torch.no_grad(), precision_scope("cuda"), (model.ema_scope() if not opt.optimized else nullcontext()):
+    with torch.no_grad(), precision_scope("cpu"), (model.ema_scope() if not opt.optimized else nullcontext()):
         init_data = func_init()
         tic = time.time()
 
