@@ -380,6 +380,8 @@ class DDIMSampler(object):
         unconditional_guidance_scale=1.0,
         unconditional_conditioning=None,
         use_original_steps=False,
+        z_mask=None,
+        x0=None,
     ):
 
         timesteps = (
@@ -403,6 +405,13 @@ class DDIMSampler(object):
                 device=x_latent.device,
                 dtype=torch.long,
             )
+            if z_mask is not None and i < total_steps - 2:
+                assert x0 is not None
+                img_orig = self.model.q_sample(x0, ts)  # TODO: deterministic forward pass?
+                mask_inv = 1. - z_mask
+                x_dec = (img_orig * mask_inv) + (z_mask * x_dec)
+
+
             x_dec, _ = self.p_sample_ddim(
                 x_dec,
                 cond,

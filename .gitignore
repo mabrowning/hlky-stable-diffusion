@@ -5,6 +5,24 @@ models/ldm/stable-diffusion-v1/model.ckpt
 # ignore a directory which serves as a place for initial images
 inputs/
 
+# OS-generated
+# ------------
+.DS_Store*
+[Tt]humbs.db
+[Dd]esktop.ini
+
+# Programming - general
+*.log
+
+
+# =========================================================================== #
+# 	Python-related
+# =========================================================================== #
+# src: https://github.com/github/gitignore/blob/master/Python.gitignore
+
+# JetBrains PyCharm / Rider
+.idea/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -183,3 +201,19 @@ testtube
 checkpoints
 # If it's a Mac
 .DS_Store
+.env_docker
+.env_updated
+condaenv.*.requirements.txt
+
+
+# =========================================================================== #
+# 	Repo-specific
+# =========================================================================== #
+/custom-conda-path.txt
+/src/*
+/outputs/*
+
+# optimizedSD:
+/log/**/*.png
+/log/log.csv
+/flagged/*
